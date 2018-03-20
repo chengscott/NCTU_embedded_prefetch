@@ -4,7 +4,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
-#if defined(ARM) || defined(ARM_PRE)
+#if defined(ARM) || defined(ARM_PRE) || defined(NAIVE)
 #include "impl_arm.c"
 #include <arm_neon.h>
 #endif
@@ -25,7 +25,7 @@ static long diff_in_us(struct timespec t1, struct timespec t2)
     return (diff.tv_sec * 1000000.0 + diff.tv_nsec / 1000.0);
 }
 
-int main(int argc, char *argv[])
+int main(void)
 {
     struct timespec start, end;
     int *src = (int *)malloc(sizeof(int) * TEST_W * TEST_H);
@@ -41,8 +41,8 @@ int main(int argc, char *argv[])
     if (!transpose_verify(src, out, TEST_W, TEST_H))
         printf("NEON verify fails;");
     printf("neon: \t\t %ld us\n", diff_in_us(start, end));
-    // printf("sse per iteration: \t\t %lf us\n", (double)diff_in_us(start,
-    // end)/sse_iteration);
+// printf("sse per iteration: \t\t %lf us\n", (double)diff_in_us(start,
+// end)/sse_iteration);
 #endif
 #ifdef ARM_PRE
     clock_gettime(CLOCK_REALTIME, &start);
@@ -51,10 +51,15 @@ int main(int argc, char *argv[])
     if (!transpose_verify(src, out, TEST_W, TEST_H))
         printf("NEON prefetch verify fails;");
     printf("neon_pre: \t\t %ld us\n", diff_in_us(start, end));
-    // printf("sse per iteration: \t\t %lf us\n", (double)diff_in_us(start,
-    // end)/sse_iteration);
+// printf("sse per iteration: \t\t %lf us\n", (double)diff_in_us(start,
+// end)/sse_iteration);
 #endif
-    // free all used memory
+// free all used memory
+#ifdef NAIVE
+    clock_gettime(CLOCK_REALTIME, &start);
+    naive_transpose(src, out, TEST_W, TEST_H);
+    clock_gettime(CLOCK_REALTIME, &end);
+#endif
     free(out);
     free(src);
     return 0;
